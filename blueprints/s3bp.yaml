@@ -1,0 +1,44 @@
+kind: blueprint
+spec: 2
+spec_version: 2-preview
+description: s3 bucket deployed with Terraform
+
+inputs:
+
+  region:
+    type: string
+    display-style: normal
+    default: "eu-west-1"
+    description: "The bucket region."
+
+  acl:
+    type: string
+    display-style: normal
+    default: "private"
+    description: "Version of RDS Engine. Default is 5.7"
+
+  name:
+    type: string
+    display-style: normal
+    default: "robotshop-s3"
+    description: "Name of the bucket."
+
+grains:
+  s3Bucket:
+    kind: terraform
+    spec:
+      source:
+        store: autogen_repo_sandbox_3aba56fa
+        path: s3
+      host:
+        name: eks-demo
+      inputs:
+        - region: us-east-1
+        - acl: private
+        - name: 'robotshop-s3-{{ sandboxid | downcase }}'
+      outputs:
+        - s3_bucket_arn
+
+outputs:
+  s3_bucket_arn:
+    value: '{{ .grains.s3Bucket.outputs.s3_bucket_arn }}'

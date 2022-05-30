@@ -1,0 +1,62 @@
+spec_version: 2-preview
+description: Robotshot microservices application deployed on K8S with Helm and RDS deployed with TF
+
+inputs:
+  version:
+    type: string
+    display-style: normal
+    default: "0.4.3"
+    description: "Version of the robotShop micorservices application"
+
+  db_size:
+    type: string
+    display-style: normal
+    default: "small"
+    description: "The instance type of the RDS instance. Small, medium, or large."
+
+  db_engine_version:
+    type: string
+    display-style: normal
+    default: "8.0.26"
+    description: "Version of RDS Engine. Default is 5.7"
+
+
+outputs:
+  WebsiteUrl:
+    value: 'robotshop-{{ sandboxid | downcase }}.testquali.click:8080'
+  DB_Hostname:
+    value: '{{ .grains.infra.outputs.DB_hostname }}'
+
+
+grains:
+  robotShopMicroservices:
+    kind: helm
+    depends-on: infra
+    spec:
+      source:
+        store: autogen_repo_sandbox_3aba56fa
+        path: robotShop
+      host:
+        name: eks-demo
+      inputs:
+        - hostname: 'robotshop-{{ sandboxid | downcase }}'
+        - version: '{{ .inputs.version }}'
+        - connectionString: '{{ .grains.infra.outputs.connection_string }}'
+        - objectStore.s3BucketArn: '{{ .grains.infra.outputs.S3_bucket_arn }}'
+        - redis.storageClassName: gp2
+        
+  infra:
+    kind: blueprint
+    spec:
+      source: 
+        store: autogen_repo_sandbox_3aba56fa
+        path: blueprints
+      host:
+        name: eks-demo
+      inputs:
+        - size: '{{ .inputs.db_size }}'
+        - engine_version: '{{ .inputs.db_engine_version }}'
+      outputs:
+        - DB_hostname
+        - connection_string
+        - S3_bucket_arn
